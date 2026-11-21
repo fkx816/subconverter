@@ -1025,6 +1025,25 @@ std::string proxyToSurge(std::vector<Proxy> &nodes, const std::string &base_conf
                     }
                 }
                 break;
+            case ProxyType::VLESS:
+                if (surge_ver < 6 || (transproto != "tcp" && transproto != "raw") ||
+                    x.PublicKey.empty() || sni.empty() ||
+                    (!x.Encryption.empty() && x.Encryption != "none") ||
+                    (!x.Flow.empty() && x.Flow != "xtls-rprx-vision" && x.Flow != "xtls-rprx-vision-udp443"))
+                    continue;
+                if (hostname.find_first_of(",\r\n") != std::string::npos ||
+                    id.find_first_of(",\r\n") != std::string::npos ||
+                    sni.find_first_of(",\r\n") != std::string::npos ||
+                    x.PublicKey.find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-/+=") != std::string::npos ||
+                    x.ShortId.size() > 16 || x.ShortId.find_first_not_of("0123456789abcdefABCDEF") != std::string::npos)
+                    continue;
+                proxy = "vless, " + hostname + ", " + port + ", username=" + id +
+                        ", sni=" + sni + ", reality-public-key=" + x.PublicKey;
+                if (!x.ShortId.empty())
+                    proxy += ", reality-short-id=" + x.ShortId;
+                if (!x.Flow.empty())
+                    proxy += ", flow=" + x.Flow;
+                break;
             case ProxyType::VMess:
                 if (surge_ver < 4 && surge_ver != -3)
                     continue;
